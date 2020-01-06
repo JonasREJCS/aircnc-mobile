@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   KeyboardAvoidingView,
@@ -7,26 +7,41 @@ import {
   StyleSheet,
   TouchableOpacity,
   TextInput,
-  Platform
+  Platform,
+  AsyncStorage
 } from "react-native";
 
 import api from "../services/api";
 
 import logo from "../assets/logo.png";
 
-export default function Login() {
+export default function Login({ navigation }) {
   const [email, setEmail] = useState("");
-  const [tecnologias, setTecnologias] = useState("");
+  const [techs, setTechs] = useState("");
+
+  useEffect(() => {
+    // verifica se usuario ja está autenticado e direciona pra dash
+    AsyncStorage.getItem('user').then(user => {
+      if(user) {
+        navigation.navigate('List')
+      }
+    })
+  }, []);
 
   async function handleSubmit() {
-    console.log(email,tecnologias)
+
     const response  = await api.post('/sessions',{
       email
     })
 
-    const { _id } = response.data;
+    const { _id: user_id } = response.data;
 
-    console.log('olha o ID', _id)
+    //salva em um tipo de "localStorage"
+    await AsyncStorage.setItem('user', user_id);
+    await AsyncStorage.setItem('techs', techs);
+
+    navigation.navigate('List');
+
   }
 
   return (
@@ -40,7 +55,7 @@ export default function Login() {
         <Text style={styles.label}>Seu e-mail</Text>
         <TextInput
           style={styles.input}
-          placeholder="Seu e-mail"
+          placeholder="Seu e-mail:"
           placeholderTextColor="#999"
           keyboardType="email-address"
           autoCapitalize="none"
@@ -51,12 +66,12 @@ export default function Login() {
         <Text style={styles.label}>Tecnologias</Text>
         <TextInput
           style={styles.input}
-          placeholder="Tecnologias de interesse"
+          placeholder="Tecnologias de interesse:"
           placeholderTextColor="#999"
           autoCapitalize="words"
           autoCorrect={false}
-          value={tecnologias}
-          onChangeText={setTecnologias}
+          value={techs}
+          onChangeText={setTechs}
         ></TextInput>
         <TouchableOpacity onPress={handleSubmit} style={styles.button}>
           <Text style={styles.buttonText}>Encontrar spots</Text>
